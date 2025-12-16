@@ -1,0 +1,97 @@
+pipeline {
+  agent any
+
+  environment {
+    NODE_ENV = 'test'
+  }
+
+  options {
+    timestamps()
+    ansiColor('xterm')
+  }
+
+  stages {
+
+    stage('Checkout') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Install Dependencies') {
+      steps {
+        sh '''
+          node -v
+          npm -v
+          npm ci
+        '''
+      }
+    }
+
+    stage('Run API Tests') {
+      when {
+        expression { params.TEST_TYPE == 'api' || params.TEST_TYPE == 'all' }
+      }
+      steps {
+        sh 'npm run test:api'
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'cypress/screenshots/**', allowEmptyArchive: true
+          archiveArtifacts artifacts: 'cypress/videos/**', allowEmptyArchive: true
+        }
+      }
+    }
+
+    stage('Run UI Tests') {
+      when {
+        expression { params.TEST_TYPE == 'ui' || params.TEST_TYPE == 'all' }
+      }
+      steps {
+        sh 'npm run test:ui'
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'cypress/screenshots/**', allowEmptyArchive: true
+          archiveArtifacts artifacts: 'cypress/videos/**', allowEmptyArchive: true
+        }
+      }
+    }
+
+    stage('Generate Mochawesome Report') {
+      steps {
+        sh '''
+          npx mochawesome-merge cypress/reports/mochawesome/*.json > cypress/reports/mochawesome/merged.json
+          npx mochawesome-report-generator cypress/reports/mochawesome/merged.json \
+            -o cypress/reports/mochawesome/html \
+            --reportTitle "Cypress Test Report"
+        '''
+      }
+    }
+
+    stage('Publish Report') {
+      steps {
+        publishHTML([
+          allowMissing: true,
+          alwaysLinkToLastBuild: true,
+          keepAll: true,
+          reportDir: 'cypress/reports/mochawesome/html',
+          reportFiles: 'index.html',
+          reportName: 'Cypress Mochawesome Report'
+        ])
+      }
+    }
+  }
+
+  post {
+    success {
+      echo 'Green Build'
+    }
+    failure {
+      echo 'Failed Build'
+    }
+    always {
+      cleanWs()
+    }
+  }
+}
