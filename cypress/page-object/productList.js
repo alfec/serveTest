@@ -1,4 +1,4 @@
-const btnAddCart = "[data-testid='adicionar-ao-carrinho']";
+const btnAddCart = "[data-testid='adicionar carrinho']";
 const btnAddToList = "[data-testid='adicionarNaLista']";
 const btnCleanup = "[data-testid='limparLista']";
 const btnDecrease = "[data-testid='product-decrease-quantity']";
@@ -7,19 +7,16 @@ const checkQuantity = "[data-testid='shopping-cart-product-quantity']";
 const btnHome = "[data-testid='paginaInicial']";
 
 export const clickBtn = (button) =>{
-    const btn ={
+    const btnMap ={
         'AddtoCart': btnAddCart,
         'Cleanup List': btnCleanup,
-        'Increase': btnDecrease,
-        'Decrease': btnIncrease,
+        'Increase': btnIncrease,
+        'Decrease': btnDecrease,
         'Homepage': btnHome,
         'AddtoList': btnAddToList
-    }[button]
+    }
+    const btn = btnMap[button]
     cy.get(btn, {timeout: 3000}).click()
-}
-
-export const validateCart = () =>{
-    cy.get(btnCheckout, {timeout: 3000}).should('be.visible');
 }
 
 export const validateProductList = () =>{
@@ -27,8 +24,7 @@ export const validateProductList = () =>{
 }
 
 export const addProductToCart = () =>{ 
-    clickBtn('btnAddToList');
-    validateProductList();
+    clickBtn('AddtoCart');
 }
 
 export const checkProductchangeQuantity = () =>{

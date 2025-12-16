@@ -7,6 +7,7 @@ const mandatoryName = "div:nth-of-type(1) > span";
 const mandatoryEmail = "div:nth-of-type(2) > span";
 const mandatoryPassword = "div:nth-of-type(3) > span";
 const duplicatedEmail = "div.alert > span";
+const successAlert = "div > form > div:nth-child(3) > div";
 
 export const createUser = (name, email, password)=>{
     cy.get(nameField).type(name)
@@ -14,24 +15,26 @@ export const createUser = (name, email, password)=>{
     cy.get(passwordField).type(password);
     //cy.get(checkBoxAdm).click();
     cy.get(btnRegister).click();
-    validateElement('Alert');
+    validateElement('successAlert');
 }
 
 function validateElement(element){
-    const validate = {
+    const elementMap = {
         'mandatoryName': mandatoryName,
         'mandatoryEmail': mandatoryEmail,
         'mandatoryPassword': mandatoryPassword,
         'duplicatedEmail': duplicatedEmail,
-    }[element]
+        'successAlert': successAlert,
+    }
+    const validate = elementMap[element]
     cy.get(validate, {timeout: 3000}).should('be.visible');
 }
 export { validateElement }
 
-const x = Math.floor(Math.random() * 100);
+const x = Math.floor(Math.random() * 10000);
 
 export const createEmail = () => {
-    let email = () => "test"+x+"@teste.com";
+    const email = "test"+x+"@teste.com";
     return email;
 }
 

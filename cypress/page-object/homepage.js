@@ -9,17 +9,18 @@ const productGrid = "#root > div > div > div.container-fluid > div > section";
 const serverestLogo = "h1";
 
 function validateElement(element){
-    const choose = {
+    const elementsMap = {
         'serverestLogo': serverestLogo,
-        'buscador': searchBar,
+        'searchBar': searchBar,
         'productGrid': productGrid
-    }[element]
-    cy.get(choose).should('be.visible');
+    }
+    const chooseElement = elementsMap[element];
+    cy.get(chooseElement, {timeout: 10000}).should('be.visible');
 }
 export { validateElement }
 
 export const clickBtn = (button) =>{
-    const btn ={
+    const btnMap ={
         'homeBtn': homeBtn,
         'buyListBtn': buyListBtn,
         'cartBtn': cartBtn,
@@ -27,12 +28,19 @@ export const clickBtn = (button) =>{
         'Search': searchBtn,
         'SearchBar': searchBar,
         'AddtoList': addToListBtn
-    }[button]
-    cy.get(btn).click()
+    }
+    const btn = btnMap[button]
+    cy.get(btn, {timeout: 10000}).click()
 }
 
 export const searchProduct = (product) =>{
-    clickBtn('searchBar').type(product);
+    cy.get(searchBar, {timeout: 10000}).should('be.visible');
+    cy.get('[data-testid="pesquisar"]').click().type(product);
     clickBtn('Search');
-    cy.get(productGrid).should('be.visible')
+    cy.get(productGrid, {timeout: 10000}).should('be.visible')
+}
+
+export const clickGridProduct = (index) =>{
+    validateElement('productGrid');
+    cy.get('[href="/minhaListaDeProdutos"] > [data-testid="adicionarNaLista"]').eq(index).click();
 }

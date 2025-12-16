@@ -1,7 +1,8 @@
 describe('Test for the calls of Users', () => {
     before(() => {
-        cy.createsDeafultUser()
+        cy.createsDefaultUser()
     });
+    
     describe('Scenarios to test the GET calls', () => {
         it('User should use GET /usuarios and see all users created', () => {
             cy.requestsFor({
@@ -108,7 +109,7 @@ describe('Test for the calls of Users', () => {
         });
 
         it('POST /usuarios - should not allow create users with the same email', () => {
-            cy.createsDeafultUser().then(() => {
+            cy.createsDefaultUser().then(() => {
                 cy.requestsFor({
                     method: 'POST',
                     url: '/usuarios',
@@ -183,7 +184,7 @@ describe('Test for the calls of Users', () => {
         });
 
         it('PUT /usuarios/ by id -  should edit the user by _id', () => {
-            cy.createsDeafultUser()
+            cy.createsDefaultUser()
             cy.then(() => {
                 const userId = Cypress.env('_id')
                 cy.createEmail().then((newEmail) => {
@@ -205,10 +206,10 @@ describe('Test for the calls of Users', () => {
         });
 
         it('PUT /usuarios/ by id - should not allow edit the user with the same email', () => {
-            cy.createsDeafultUser()
+            cy.createsDefaultUser()
             cy.then(() => {
                 const emailDuplicado = Cypress.env('defaultEmail')
-                cy.createsDeafultUser()
+                cy.createsDefaultUser()
                 cy.then(() => {
                     const userId = Cypress.env('_id')
                     cy.requestsFor({

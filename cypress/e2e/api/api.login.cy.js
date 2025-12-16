@@ -1,7 +1,7 @@
 describe('Tests for Login calls', () => {
     //first API test written
     before(() => {
-        cy.createsDeafultUser()
+        cy.createsDefaultUser()
     });
     describe('Tests scenarios for the POST call', () => {
         it('Validate Login using correct credentials', () =>{
@@ -9,7 +9,7 @@ describe('Tests for Login calls', () => {
                 method: 'POST',
                 url: '/login',
                 body: {
-                    "identifier": Cypress.env('defaultEmail'),
+                    "email": Cypress.env('defaultEmail'),
                     "password": Cypress.env('defaultPassword')
                 },
             }).then((response) => {
@@ -22,12 +22,13 @@ describe('Tests for Login calls', () => {
                 method: 'POST',
                 url: '/login',
                 body: {
-                    "identifier": "test@t.com",
+                    "email": "test123123123@t.com",
                     "password": "testeeee123"
                 },
             }).then((response) => {
-                expect(response.status).to.be.oneOf([400, 401])
-                expect(response.body).to.have.property('message')
+                expect(response.status).to.be.oneOf([400, 401]);
+                console.log(response.body);
+                expect(response.body).to.have.property('message');
             });
         });
 

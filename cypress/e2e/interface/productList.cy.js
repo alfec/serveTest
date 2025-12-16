@@ -1,4 +1,3 @@
-import * as checkout from '../../page-object/checkOut.js';
 import * as hp from '../../page-object/homepage.js';
 import * as product from '../../page-object/productList.js';
 import * as login from '../../page-object/login.js';
@@ -7,7 +6,7 @@ import * as createUser from '../../page-object/createUser.js'
 const password = 'teste1234';
 const name = 'Teste QA';
 
-describe('Checkout', () => {
+describe('Product List', () => {
   beforeEach(() => {
     cy.createEmail().then((email) => {
       cy.visit('/')
@@ -17,15 +16,15 @@ describe('Checkout', () => {
     });
   });
 
-  it('Go to checkout page using the button on the Menu', () => {
-    hp.clickBtn('cartBtn');
-    checkout.validateProductList()
+  it('Add a product to List', () => {
+    hp.searchProduct('Logitech');
+    product.clickBtn('AddtoList');
+    product.validateProductList();
   });
 
-  it('Go to checkout page doing all the user path', () => {
-    hp.searchProduct('Logitech');
-    hp.clickBtn('AddtoList');
-    product.clickBtn('AddtoCart');
-    checkout.validateProductList();
+  it('Increase the amount of item on the List', () => {
+    hp.clickGridProduct(0);
+    product.validateProductList();
+    product.checkProductchangeQuantity();
   });
 });

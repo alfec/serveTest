@@ -14,8 +14,8 @@ export const clickRegister = () =>{
 }
 
 export const wrongLogin = (email, password) => {
-    cy.get(emailField).type(email);
-    cy.get(passwordField).type(password);
+    cy.get(emailField).clear().type(email);
+    cy.get(passwordField).clear().type(password);
     cy.get(btnLogin).click();
     cy.get("div.alert > span", {timeout: 3000}).should('be.visible');
 }
