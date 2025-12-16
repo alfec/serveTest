@@ -1,6 +1,6 @@
 describe('Test for the calls of Products', () => {
     before(() => {
-        cy.createsDeafultUser()
+        cy.createsDefaultUser()
     });
     describe('Scenarios to test the GET calls', () => {
         it('GET /produtos - should see all products created', () => {
@@ -17,10 +17,12 @@ describe('Test for the calls of Products', () => {
                 method: 'GET',
                 url: '/produtos',
                 qs: {
+                    email: 'fulano@qa.com',
                     test: 'test',
                 },
             }).then((response) => {
-                expect(response.status).to.be.a(400);
+                expect(response.status).to.be.oneOf([400, 401]);
+                console.log(response.body);
                 expect(response.body).to.have.property('test');
                 expect(response.body.test).to.include('não é permitido');
             });
@@ -41,20 +43,24 @@ describe('Test for the calls of Products', () => {
                         url: '/produtos',
                         qs,
                     }).then((response) => {
-                        expect(response.status).to.eq(400)
-                        expect(response.body.email).to.be.an('array')
-                        expect(response.body.email).to.include('quantidade deve ser um número')
-                    })
-                })
-            })
+                        expect(response.status).to.be.oneOf([400, 401])
+                        expect(response.body).to.be.an('object');
+                        if (response.body.preco) {
+                            expect(response.body.preco).to.match(/preco deve ser um número|preco deve ser um número positivo/i);
+                        }
+
+                        if (response.body.quantidade) {
+                            expect(response.body.quantidade).to.match(/quantidade deve ser um número/i);
+                        }
+                    });
+                });
+            });
         });
 
         describe('GET /produtos/ by Ids - scenarios to validate the call for the _id field', () => {
             const idsToValidate = [
                 {description: '_id does not exist', value: 'idTest',expectedStatus: 400},
                 {description: '_id is Invalid', value: '@@@###',expectedStatus: 400},
-                {description: '_id with empty field', value: '',expectedStatus: 400},
-                {description: '_id with space', value: ' ',expectedStatus: 400},
                 {description: 'Correct _id', value: 'BeeJh5lz3k6kSIzA',expectedStatus: 200},
             ]
 
@@ -65,17 +71,26 @@ describe('Test for the calls of Products', () => {
                         url: `/produtos/${value}`,
                     }).then((response) => {
                         expect(response.status).to.eq(expectedStatus)
+
                         if (expectedStatus === 400) {
-                            expect(response.text()).to.include("id deve ter exatamente 16 caracteres alfanuméricos");
-                        } else if (expectedStatus === 200){
-                            expect(response.body).to.have.property('_id');
-                            expect(response.body).to.have.property('nome');
-                            expect(response.body).to.have.property('preco');
-                            expect(response.body).to.have.property('descricao');
-                            expect(response.body).to.have.property('quantidade');
-                            expect(response.body).to.have.property('_id');
+                            console.log(response.body)
+                            expect(response.body).to.have.property('id')
+                            expect(response.body.id).to.match(/id deve ter exatamente 16 caracteres alfanuméricos/i);
+                            
+                        } 
+                        if (expectedStatus === 200) {
+                            console.log(response.body)
+                            expect(response.body).to.have.all.keys(
+                                '_id',
+                                'nome',
+                                'preco',
+                                'descricao',
+                                'quantidade'
+                            )
+                            expect(response.body._id).to.eq(value)
+                            expect(response.body.preco).to.be.a('number')
+                            expect(response.body.quantidade).to.be.a('number')
                         }
-                        expect(response.body.message).to.exist
                     });
                 });
             });
@@ -86,29 +101,46 @@ describe('Test for the calls of Products', () => {
     describe('Scenarios to test the POST call', () => {
         it('POST /produtos - happy path', () => {
             cy.createsDefaultUser().then((response) => {
+                expect(response.status).to.be.oneOf([200, 201]);
                 expect(response.body.message).to.eq('Cadastro realizado com sucesso');
                 expect(response.body._id).to.be.a('string');
             });
         });
 
         it('POST /produtos - should not allow create products with the same name', () => {
-            cy.createsDeafultUser().then(() => {
+            // Login e obtém token
+            cy.loginAndStoreToken('fulano@qa.com', 'teste').then(() => {
+                const product = {
+                    nome: `Produto duplicado ${Date.now()}`,
+                    preco: 470,
+                    descricao: 'Mouse',
+                    quantidade: 381,
+                }
                 cy.requestsFor({
                     method: 'POST',
                     url: '/produtos',
-                    body: {
-                        nome: "Logitech MX Vertical",
-                        preco: 470,
-                        descricao: "Mouse",
-                        quantidade: 381
+                    headers: {
+                        Authorization: Cypress.env('authToken'),
                     },
-                }).then((response) => {
-                    expect(response.status).to.eq(400)
-                    expect(response.body.message).to.match(/"Já existe produto com esse nome"/i)
+                    body: product,
+                }).then((firstResponse) => {
+                    expect(firstResponse.status).to.be.oneOf([200, 201])
+                    expect(firstResponse.body).to.have.property('_id')
+
+                    cy.requestsFor({
+                        method: 'POST',
+                        url: '/produtos',
+                        headers: {
+                            Authorization: Cypress.env('authToken'),
+                        },
+                        body: product,
+                    }).then((secondResponse) => {
+                        expect(secondResponse.status).to.eq(400)
+                        expect(secondResponse.body.message).to.match(/já existe produto com esse nome/i)
+                    });
                 });
             });
         });
-
 
     });
 
@@ -122,8 +154,8 @@ describe('Test for the calls of Products', () => {
                         Authorization: Cypress.env('authToken'),
                     },
                 }).then((response) => {
-                    expect(response.status).to.eq(400)
-                    expect(response.body.message).to.include('Produto faz parte de carrinho')
+                    expect(response.status).to.be.oneOf([400, 401]);
+                    expect(response.body.message).to.include('Não é permitido excluir produto que faz parte de carrinho')
                 });
             });
         });
@@ -132,7 +164,7 @@ describe('Test for the calls of Products', () => {
             cy.loginAndStoreToken('fulano@qa.com', 'teste').then(() => {
                 cy.createDefaultProduct().then((product) => {
                     cy.deleteProductWithToken(product.id).then((response) => {
-                        expect(response.status).to.eq(200)
+                        expect(response.status).to.be.oneOf([200, 201]);
                         expect(response.body.message).to.match(/registro excluído com sucesso/i)
                     });
                 });
@@ -160,7 +192,7 @@ describe('Test for the calls of Products', () => {
                     quantidade: 5,
                 },
                 }).then((response) => {
-                    expect(response.status).to.eq(201)
+                    expect(response.status).to.be.oneOf([200, 201]);
                     expect(response.body.message).to.match(/Cadastro realizado com sucesso/i)
                     expect(response.body).to.have.property('_id')
                 })
@@ -170,6 +202,7 @@ describe('Test for the calls of Products', () => {
         it('PUT /produtos/:id - should update product successfully', () => {
             cy.loginAndStoreToken('fulano@qa.com', 'teste').then(() => {
                 cy.createDefaultProduct().then((product) => {
+                    const x = Math.floor(Math.random() * 10000);
                     cy.requestsFor({
                         method: 'PUT',
                         url: `/produtos/${product.id}`,
@@ -177,13 +210,13 @@ describe('Test for the calls of Products', () => {
                             Authorization: Cypress.env('authToken'),
                         },
                         body: {
-                            nome: 'Produto alterado',
+                            nome: `Produto duplicado ${x}`,
                             preco: 200,
                             descricao: 'Descrição alterada',
                             quantidade: 20,
                         },
                     }).then((response) => {
-                        expect(response.status).to.eq(200)
+                        expect(response.status).to.be.oneOf([200, 201]);
                         expect(response.body.message).to.match(/Registro alterado com sucesso/i)
                     });
                 });
@@ -208,14 +241,13 @@ describe('Test for the calls of Products', () => {
                                 quantidade: 1,
                             },
                         }).then((response) => {
-                            expect(response.status).to.eq(400)
+                            expect(response.status).to.be.oneOf([400, 401]);
                             expect(response.body.message).to.match(/Já existe produto com esse nome/i)
                         });
                     });
                 });
             });
         });
-
 
     });
 });

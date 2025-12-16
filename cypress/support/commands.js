@@ -59,7 +59,6 @@ Cypress.Commands.add('createRandomName', () => {
   return cy.wrap(name)
 })
 
-
 Cypress.Commands.add('loginAndStoreToken', (email, password) => {
   return cy.requestsFor({
     method: 'POST',
